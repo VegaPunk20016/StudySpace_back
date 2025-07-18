@@ -1,16 +1,24 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const app = express();
+const express = require("express");
+const { getConnection, sql } = require("./db");
+require("dotenv").config();
+const bcrypt = require("bcrypt");
 
-app.use(cors());
+const usuariosRoutes = require("./routes/usuariosRoutes"); // <--- esto te falta
+const materiasRoutes = require("./routes/materiasRoutes");
+const sesionesRoutes = require("./routes/sesionesRoutes");
+const ollamaRoutes = require("./routes/ollamaRoutes");
+
+const app = express();
+const PORT = 8080;
+
 app.use(express.json());
 
-// Rutas
-app.use('/usuarios', require('./routes/usuarios'));
-// agrega las demás rutas aquí
+app.use("/api/usuarios", usuariosRoutes);
+app.use("/api/materias", materiasRoutes);
+app.use("/api/sesiones", sesionesRoutes);
+app.use("/api/ollama", ollamaRoutes);
 
-const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+    console.log(`🚀 Backend corriendo en http://localhost:${PORT}`);
 });
