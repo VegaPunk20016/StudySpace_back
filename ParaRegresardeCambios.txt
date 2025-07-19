@@ -8,6 +8,7 @@ POST:
        {
         "nombre":"",
         "correo":"",
+        "rol":"",
         "password":""
        }
 -----> api/usuarios/login
@@ -21,13 +22,15 @@ GET:
          (trae todos los usuarios)
 -------> api/usuarios/:id
          (trae usuario por id)
-
+-------> api/usuarios/rol/:rol
+         (trae usuario por rol)
 PUT:
 -------> api/usuarios/:id
          (modifica usuario por id)
         {
         "nombre":"",
         "correo":"",
+        "rol":"",
         "password":""
         }
 

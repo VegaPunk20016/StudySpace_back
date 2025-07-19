@@ -20,11 +20,12 @@ async function create(usuario) {
     await pool.request()
         .input("nombre", sql.NVarChar(100), usuario.nombre)
         .input("correo", sql.NVarChar(150), usuario.correo)
+        .input("rol", sql.NVarChar(50), usuario.rol)
         .input("password_hash", sql.NVarChar(255), usuario.password_hash)
         .input("fecha_registro", sql.DateTime, usuario.fecha_registro || new Date())
         .query(`
-            INSERT INTO usuarios (nombre, correo, password_hash, fecha_registro)
-            VALUES (@nombre, @correo, @password_hash, @fecha_registro)
+            INSERT INTO usuarios (nombre, correo, rol, password_hash, fecha_registro)
+            VALUES (@nombre, @correo, @rol, @password_hash, @fecha_registro)
         `);
 }
 
@@ -34,11 +35,13 @@ async function update(id, usuario) {
         .input("id", sql.Int, id)
         .input("nombre", sql.NVarChar(100), usuario.nombre)
         .input("correo", sql.NVarChar(150), usuario.correo)
+        .input("rol", sql.NVarChar(50), usuario.rol)
         .input("password_hash", sql.NVarChar(255), usuario.password_hash)
         .query(`
             UPDATE usuarios
             SET nombre = @nombre,
                 correo = @correo,
+                rol = @rol,
                 password_hash = @password_hash
             WHERE id = @id
         `);
@@ -53,6 +56,14 @@ async function remove(id) {
     return result.rowsAffected[0];
 }
 
+async function removeByEmail(correo) {
+    const pool = await getConnection();
+    const result = await pool.request()
+        .input("correo", sql.NVarChar(150), correo)
+        .query(`DELETE FROM usuarios WHERE correo = @correo`);
+    return result.rowsAffected[0];
+}
+
 async function getByEmail(correo) {
     const pool = await getConnection();
     const result = await pool.request()
@@ -61,6 +72,13 @@ async function getByEmail(correo) {
     return result.recordset[0]; // devuelve un solo usuario o undefined
 }
 
+async function getByRol(rol) {
+    const pool = await getConnection();
+    const result = await pool.request()
+        .input("rol", sql.NVarChar(50), rol)
+        .query("SELECT * FROM usuarios WHERE rol = @rol");
+    return result.recordset[0]; 
+}
 
 
-module.exports = { getByEmail,getAll, getById, create, update, remove};
+module.exports = { getByEmail,getAll, getById, getByRol, create, update, remove, removeByEmail};

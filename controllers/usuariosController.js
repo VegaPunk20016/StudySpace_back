@@ -29,10 +29,10 @@ async function getById(req, res) {
 
 async function create(req, res) {
     try {
-        const { nombre, correo, password } = req.body;
+        const { nombre, correo, rol, password } = req.body;
 
-        if (!nombre || !correo || !password) {
-            return res.status(400).json({ success: false, message: "nombre, correo y password son requeridos" });
+        if (!nombre || !correo || !rol || !password) {
+            return res.status(400).json({ success: false, message: "nombre, correo, rol y password son requeridos" });
         }
 
         const hash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -84,6 +84,36 @@ async function remove(req, res) {
     }
 }
 
+async function removeByEmail(req, res) {
+    try {
+        const correo = req.params.correo;
+        const rowsAffected = await Model.removeByEmail(correo);
+        if (!rowsAffected) {
+            return res.status(404).json({ success: false, message: "No encontrado" });
+        }
+        res.json({ success: true, message: "Usuario eliminado por correo" });
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: error.message });
+        
+    }
+}
+
+async function getByRol(req, res) {
+    try{
+        const rol = req.params.rol;
+        const usuario = await Model.getByRol(rol);
+        if (!usuario) {
+            return res.status(404).json({ success: false, message: "No encontrado" });
+        }
+        res.json({ success: true, data: Mapper.mapUsuario(usuario) });
+    }catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+}
+
 // opcional: login
 async function login(req, res) {
     try {
@@ -114,4 +144,4 @@ async function login(req, res) {
     }
 }
 
-module.exports = { getAll, getById, create, update, remove, login };
+module.exports = { getAll, getById, create, update, remove, login, getByRol, removeByEmail };

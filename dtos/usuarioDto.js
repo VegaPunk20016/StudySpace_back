@@ -1,8 +1,9 @@
-function UsuarioDto({ id, nombre, email, fecha_registro }) {
+function UsuarioDto({ id, nombre, email, rol, fecha_registro }) {
     return {
         id,
         nombre,
         email,
+        rol,
         fechaRegistro: fecha_registro
     };
 }
