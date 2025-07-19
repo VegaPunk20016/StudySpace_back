@@ -13,11 +13,21 @@ function recomendaciones(req, res) {
       message: "usuario_id es requerido",
     });
   }
+  const token = req.headers.authorization;
+  if (!token) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Token no proporcionado" });
+  }
 
   // 1️⃣ Petición HTTP interna
-  fetch(`http://localhost:8080/api/sesiones/usuario/${usuario_id}`)
-    .then(resp => resp.json())
-    .then(json => {
+  fetch(`http://localhost:8080/api/sesiones/usuario/${usuario_id}`, {
+    headers: {
+      authorization: token, // Usar el token de autorización del request
+    },
+  })
+    .then((resp) => resp.json())
+    .then((json) => {
       if (!json.success || !Array.isArray(json.data)) {
         throw new Error("Error al obtener las sesiones del usuario");
       }
@@ -32,47 +42,72 @@ function recomendaciones(req, res) {
           return res.status(500).json({ success: false, error: err.message });
         }
 
-        const filePath = path.join(uploadsDir, `usuario_${usuario_id}_sesiones.json`);
-        fs.writeFile(filePath, JSON.stringify(sesiones, null, 2), "utf-8", (err) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ success: false, error: err.message });
-          }
-
-          // 3️⃣ Leer archivo
-          fs.readFile(filePath, "utf-8", (err, data) => {
+        const filePath = path.join(
+          uploadsDir,
+          `usuario_${usuario_id}_sesiones.json`
+        );
+        fs.writeFile(
+          filePath,
+          JSON.stringify(sesiones, null, 2),
+          "utf-8",
+          (err) => {
             if (err) {
               console.error(err);
-              return res.status(500).json({ success: false, error: err.message });
+              return res
+                .status(500)
+                .json({ success: false, error: err.message });
             }
 
-            const sesionesFromFile = JSON.parse(data);
-            const prompt = generarPromptRecomendaciones(usuario_id, sesionesFromFile);
-
-            // 4️⃣ Llamar a Gemma
-            callGemma(prompt)
-              .then(respuesta => {
-                const limpio = parseOllamaResponse(respuesta);
-
-                if (!limpio) {
-                  return res.status(500).json({ success: false, message: "No se pudo parsear la respuesta de Ollama" });
-                }
-
-                res.json({
-                  success: true,
-                  recomendaciones: limpio,
-                  archivo: `/uploads/usuario_${usuario_id}_sesiones.json`,
-                });
-              })
-              .catch(err => {
+            // 3️⃣ Leer archivo
+            fs.readFile(filePath, "utf-8", (err, data) => {
+              if (err) {
                 console.error(err);
-                res.status(500).json({ success: false, error: err.message });
-              });
-          });
-        });
+                return res
+                  .status(500)
+                  .json({ success: false, error: err.message });
+              }
+
+              const sesionesFromFile = JSON.parse(data);
+              const prompt = generarPromptRecomendaciones(
+                usuario_id,
+                sesionesFromFile
+              );
+
+              // 4️⃣ Llamar a Gemma
+              callGemma(prompt)
+                .then((respuesta) => {
+                  const limpio = parseOllamaResponse(respuesta);
+
+                  if (!limpio) {
+                    return res.status(500).json({
+                      success: false,
+                      message: "No se pudo parsear la respuesta de Ollama",
+                    });
+                  }
+                  res.json({
+                    success: true,
+                    recomendaciones: limpio,
+                    archivo: `/uploads/usuario_${usuario_id}_sesiones.json`,
+                  });
+                  // Borrar el archivo después de enviar la respuesta
+                  fs.unlink(filePath, (err) => {
+                    if (err) {
+                      console.error("Error al borrar archivo:", err);
+                    } else {
+                      console.log(`Archivo ${filePath} borrado correctamente.`);
+                    }
+                  });
+                })
+                .catch((err) => {
+                  console.error(err);
+                  res.status(500).json({ success: false, error: err.message });
+                });
+            });
+          }
+        );
       });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ success: false, error: err.message });
     });
